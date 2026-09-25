@@ -1,0 +1,50 @@
+/* Base styles from the mockup's <helmet><style> block, plus full-viewport mobile layout. */
+html, body, #root { height: 100%; }
+body { margin: 0; font-family: 'DM Sans', sans-serif; background: #FFFFFF; color: #1E2328; -webkit-tap-highlight-color: transparent; }
+button, textarea, input { font-family: inherit; }
+button { cursor: pointer; touch-action: manipulation; }
+button:disabled { cursor: default; }
+a { color: #2B5F7A; }
+a:hover { color: #1D4459; }
+input, textarea { outline-color: #2B5F7A; }
+
+.app {
+  --nav-h: calc(78px + env(safe-area-inset-bottom));
+  position: relative;
+  box-sizing: border-box;
+  max-width: 480px;
+  height: 100dvh;
+  margin: 0 auto;
+  padding: calc(24px + env(safe-area-inset-top)) 20px calc(var(--nav-h) + 14px);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  background: #FFFFFF;
+  overflow: hidden;
+}
+
+.bottom-nav {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 8px 12px calc(14px + env(safe-area-inset-bottom));
+  border-top: 1px solid #F1EEE9;
+  background: #FFFFFF;
+}
+
+.toast {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: calc(var(--nav-h) + 14px);
+  padding: 16px;
+  border-radius: 16px;
+  background: #1E2328;
+  color: #FFFFFF;
+  font-size: 15px;
+  box-shadow: 0 8px 24px rgba(30, 35, 40, 0.25);
+  z-index: 10;
+}

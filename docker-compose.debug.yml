@@ -1,0 +1,7 @@
+# Overlay: docker compose -f docker-compose.yml -f docker-compose.debug.yml up --build
+# Then run "Attach to Docker (port 9229)" in VS Code.
+services:
+  twin-log:
+    command: ["node", "--inspect=0.0.0.0:9229", "server/index.js"]
+    ports:
+      - "9229:9229"

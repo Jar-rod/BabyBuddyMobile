@@ -1,0 +1,13 @@
+services:
+  twin-log:
+    build: .
+    image: twin-log:latest
+    container_name: twin-log
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      BABYBUDDY_URL: ${BABYBUDDY_URL:-http://192.168.0.28:8000}

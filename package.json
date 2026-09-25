@@ -1,0 +1,25 @@
+{
+  "name": "twin-log",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Mobile front-end for Baby Buddy (Levi & Liam)",
+  "scripts": {
+    "dev": "concurrently -k -n server,web -c blue,green \"npm:dev:server\" \"npm:dev:web\"",
+    "dev:server": "PORT=8091 node --inspect=9229 --watch --env-file-if-exists=.env server/index.js",
+    "dev:web": "vite",
+    "build": "vite build",
+    "start": "node server/index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "http-proxy-middleware": "^3.0.3"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "vite": "^6.0.7"
+  }
+}
