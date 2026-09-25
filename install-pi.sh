@@ -49,10 +49,30 @@ if ! command -v docker >/dev/null; then
   curl -fsSL https://get.docker.com | $SUDO sh || die "Docker install failed"
 fi
 
+# Docker Compose v2. Debian's docker.io has no plugin package, so fall back to the
+# official release binary installed as a CLI plugin.
+install_compose_binary() {
+  local arch
+  case "$(uname -m)" in
+    aarch64|arm64) arch=aarch64 ;;
+    armv7l)        arch=armv7 ;;
+    armv6l)        arch=armv6 ;;
+    x86_64)        arch=x86_64 ;;
+    *) return 1 ;;
+  esac
+  say "Downloading Docker Compose v2 ($arch) from GitHub"
+  $SUDO mkdir -p /usr/local/lib/docker/cli-plugins
+  $SUDO curl -fsSL -o /usr/local/lib/docker/cli-plugins/docker-compose \
+    "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-$arch" || return 1
+  $SUDO chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+}
+
 if ! docker compose version >/dev/null 2>&1; then
   say "Installing the Docker Compose plugin"
-  $SUDO apt-get update -qq || die "apt-get update failed"
-  $SUDO apt-get install -y -qq docker-compose-plugin || die "Could not install docker-compose-plugin"
+  { $SUDO apt-get update -qq && $SUDO apt-get install -y -qq docker-compose-plugin; } >/dev/null 2>&1 \
+    || install_compose_binary \
+    || command -v docker-compose >/dev/null \
+    || die "Could not install Docker Compose. Install it manually, then re-run."
 fi
 
 # Use plain `docker` if this user can reach the daemon; otherwise go through sudo.
@@ -63,6 +83,14 @@ if ! docker info >/dev/null 2>&1; then
     $SUDO usermod -aG docker "$USER" || true
     warn "Added $USER to the docker group — log out and back in to use docker without sudo."
   fi
+fi
+# Prefer the v2 plugin; fall back to a legacy standalone docker-compose.
+DOCKER_PREFIX=""
+[ "$DOCKER" != "docker" ] && DOCKER_PREFIX="$SUDO "
+if docker compose version >/dev/null 2>&1; then
+  COMPOSE="${DOCKER_PREFIX}docker compose"
+else
+  COMPOSE="${DOCKER_PREFIX}docker-compose"
 fi
 
 # ---- 2. Code -----------------------------------------------------------------
@@ -106,7 +134,7 @@ fi
 
 # ---- 4. Build and run ----------------------------------------------------------
 say "Building and starting the container (the first build on a Pi takes a few minutes)"
-$DOCKER compose up -d --build --remove-orphans
+$COMPOSE up -d --build --remove-orphans
 $DOCKER image prune -f >/dev/null || true
 
 port="$(grep '^HOST_PORT=' .env | cut -d= -f2- || true)"
@@ -117,15 +145,15 @@ for _ in $(seq 1 30); do
     if curl -fsS -m 5 "http://127.0.0.1:$port/api/children/" >/dev/null 2>&1; then
       ip="$(lan_ip)"
       say "Twin log is running → http://${ip:-<pi-ip>}:$port"
-      echo "    Logs:    cd $INSTALL_DIR && $DOCKER compose logs -f"
+      echo "    Logs:    cd $INSTALL_DIR && $COMPOSE logs -f"
       echo "    Update:  re-run this installer"
       exit 0
     fi
     warn "The app is up but can't read from Baby Buddy. Check the URL and login in $INSTALL_DIR/.env, then re-run."
-    $DOCKER compose logs --tail 20
+    $COMPOSE logs --tail 20
     exit 1
   fi
   sleep 2
 done
-$DOCKER compose logs --tail 30
+$COMPOSE logs --tail 30
 die "The app did not become healthy on port $port."

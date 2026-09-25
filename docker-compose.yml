@@ -6,8 +6,6 @@ services:
     restart: unless-stopped
     ports:
       - "${HOST_PORT:-8001}:8090"   # phone URL: http://<pi-ip>:8001
-    env_file:
-      - path: .env
-        required: false
+    env_file: .env   # created by install-pi.sh (or copy .env.example)
     environment:
       BABYBUDDY_URL: ${BABYBUDDY_URL:-http://192.168.0.28:8000}
