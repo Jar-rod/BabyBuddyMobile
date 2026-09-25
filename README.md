@@ -17,7 +17,7 @@ Baby Buddy's API sends no CORS headers, so the browser can't call it directly. T
 Copy `.env.example` to `.env` and set one of these:
 
 - `BABYBUDDY_TOKEN`: the API key from Baby Buddy (user menu → *API key*), **or**
-- `BABYBUDDY_USER` / `BABYBUDDY_PASSWORD`: the server logs in once and fetches the key itself.
+- `BABYBUDDY_USER` / `BABYBUDDY_PASSWORD`: the server logs in once and fetches the key itself. Wrap values in single quotes, e.g. `BABYBUDDY_PASSWORD='p@ss$word'`.
 
 Also set `BABYBUDDY_URL`, which defaults to `http://192.168.0.28:8000`.
 
@@ -52,7 +52,7 @@ curl -fsSL https://raw.githubusercontent.com/Jar-rod/BabyBuddyMobile/main/instal
 
 1. Installs git, Docker and the Compose plugin if they're missing.
 2. Clones this repo to `~/BabyBuddyMobile`, or updates it if it's already there.
-3. On the first run only, asks for the Baby Buddy URL, username and password and saves them to `~/BabyBuddyMobile/.env`. Only your user can read that file.
+3. On the first run, asks for the Baby Buddy URL, username (default `Ramsaroop`) and password, and saves them to `~/BabyBuddyMobile/.env`. Only your user can read that file.
 4. Builds the image on the Pi (arm64) and starts it with `restart: unless-stopped`, so it comes back after a reboot.
 5. Waits until the app can read from Baby Buddy, then prints the address.
 
@@ -60,6 +60,11 @@ Then open **http://192.168.0.28:8001** on your phone and use *Add to Home Screen
 
 - **Update:** push to `main`, then run the same command again. Your `.env` settings are kept.
 - **From the Mac:** `./deploy-pi.sh pi@192.168.0.28` runs the installer on the Pi over SSH.
+- **Change the Baby Buddy login:** run the installer with the new login in front of `bash`. It rewrites `.env` and restarts the app:
+  ```bash
+  curl -fsSL https://raw.githubusercontent.com/Jar-rod/BabyBuddyMobile/main/install-pi.sh | BABYBUDDY_USER=Ramsaroop BABYBUDDY_PASSWORD='your-password' bash
+  ```
+  Add `bash -s -- --reconfigure` instead of `bash` to be asked every setting again. The default username (`Ramsaroop`), port and install folder are in the *Config* block at the top of [install-pi.sh](install-pi.sh). The password is never stored there, because this repo is public.
 - **Change the port:** edit `HOST_PORT` in `~/BabyBuddyMobile/.env` and run the installer again.
 - **Logs:** `cd ~/BabyBuddyMobile && docker compose logs -f`
 

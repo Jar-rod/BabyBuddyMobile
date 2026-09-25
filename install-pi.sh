@@ -4,13 +4,33 @@
 #   curl -fsSL https://raw.githubusercontent.com/Jar-rod/BabyBuddyMobile/main/install-pi.sh | bash
 #
 # Re-run the same command to update. Settings live in ~/BabyBuddyMobile/.env and are kept.
-# Optional environment overrides: INSTALL_DIR, HOST_PORT, BRANCH, REPO_URL.
+#
+# Change the Baby Buddy login (updates .env and restarts the app):
+#   curl -fsSL https://raw.githubusercontent.com/Jar-rod/BabyBuddyMobile/main/install-pi.sh | BABYBUDDY_PASSWORD='...' bash
+# Re-ask every setting:
+#   curl -fsSL https://raw.githubusercontent.com/Jar-rod/BabyBuddyMobile/main/install-pi.sh | bash -s -- --reconfigure
 set -euo pipefail
 
+# The whole script is inside { } so bash reads it all before running; the update step
+# below rewrites this file when it's run from the checkout.
+{
+
+# ---- Config -------------------------------------------------------------------------
+# Every value can be overridden from the environment when running the script.
+# The password is deliberately NOT stored here - this file is public on GitHub.
+DEFAULT_BABYBUDDY_USER="Ramsaroop"
+DEFAULT_BABYBUDDY_URL=""               # empty = http://<this Pi's IP>:8000
+HOST_PORT="${HOST_PORT:-8001}"         # port phones use: http://<pi-ip>:8001
 REPO_URL="${REPO_URL:-https://github.com/Jar-rod/BabyBuddyMobile.git}"
 BRANCH="${BRANCH:-main}"
 INSTALL_DIR="${INSTALL_DIR:-$HOME/BabyBuddyMobile}"
-HOST_PORT="${HOST_PORT:-8001}"
+RECONFIGURE="${RECONFIGURE:-0}"
+for arg in "$@"; do
+  case "$arg" in
+    --reconfigure) RECONFIGURE=1 ;;
+    *) printf 'Unknown option: %s\n' "$arg" >&2; exit 2 ;;
+  esac
+done
 
 say()  { printf '\n\033[1;34m==>\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m!!\033[0m %s\n' "$*"; }
@@ -22,7 +42,11 @@ ask() {
   # Prompt on the terminal itself (stdout is captured, stdin may be the curl pipe).
   # No usable terminal (e.g. run from a script): fall back to the default.
   if { exec 3<>/dev/tty; } 2>/dev/null; then
+    if [ -n "$default" ] && [ -z "$secret" ]; then
     printf '%s [%s]: ' "$prompt" "$default" >&3
+  else
+    printf '%s: ' "$prompt" >&3
+  fi
     if [ -n "$secret" ]; then
       read -r -s reply <&3 || true
       printf '\n' >&3
@@ -112,28 +136,65 @@ else
 fi
 cd "$INSTALL_DIR"
 
-# ---- 3. Settings (first run only) -----------------------------------------------
-if [ ! -f .env ]; then
+# ---- 3. Settings -------------------------------------------------------------------
+# Read a saved value from .env (surrounding single quotes removed).
+env_get() {
+  [ -f .env ] || return 0
+  { grep "^$1=" .env || true; } | tail -1 | cut -d= -f2- | sed "s/^'\(.*\)'$/\1/"
+}
+
+# (Re)write .env on the first run, with --reconfigure, or when a setting is passed in.
+if [ ! -f .env ] || [ "$RECONFIGURE" = 1 ] || [ -n "${BABYBUDDY_URL:-}${BABYBUDDY_USER:-}${BABYBUDDY_PASSWORD:-}" ]; then
   say "Configuring the connection to Baby Buddy (press Enter to accept the [default])"
   host_ip="$(lan_ip)"
-  bb_url="$(ask 'Baby Buddy URL' "http://${host_ip:-192.168.0.28}:8000")"
-  bb_user="$(ask 'Baby Buddy username' 'admin')"
-  bb_pass="$(ask 'Baby Buddy password' 'admin' secret)"
+  saved_url="$(env_get BABYBUDDY_URL)"
+  saved_user="$(env_get BABYBUDDY_USER)"
+  saved_pass="$(env_get BABYBUDDY_PASSWORD)"
+  saved_port="$(env_get HOST_PORT)"
+  def_url="${saved_url:-${DEFAULT_BABYBUDDY_URL:-http://${host_ip:-192.168.0.28}:8000}}"
+  def_user="${saved_user:-$DEFAULT_BABYBUDDY_USER}"
+  ask_all=0
+  if [ ! -f .env ] || [ "$RECONFIGURE" = 1 ]; then ask_all=1; fi
+
+  if [ -n "${BABYBUDDY_URL:-}" ]; then bb_url="$BABYBUDDY_URL"
+  elif [ "$ask_all" = 1 ]; then bb_url="$(ask 'Baby Buddy URL' "$def_url")"
+  else bb_url="$def_url"; fi
+
+  if [ -n "${BABYBUDDY_USER:-}" ]; then bb_user="$BABYBUDDY_USER"
+  elif [ "$ask_all" = 1 ]; then bb_user="$(ask 'Baby Buddy username' "$def_user")"
+  else bb_user="$def_user"; fi
+
+  # Keep the saved password only if the username is unchanged.
+  keep_pass=""
+  if [ "$bb_user" = "$saved_user" ]; then keep_pass="$saved_pass"; fi
+  if [ -n "${BABYBUDDY_PASSWORD:-}" ]; then bb_pass="$BABYBUDDY_PASSWORD"
+  elif [ "$ask_all" = 1 ] || [ -z "$keep_pass" ]; then
+    label="Baby Buddy password for $bb_user"
+    if [ -n "$keep_pass" ]; then label="$label (Enter keeps the saved one)"; fi
+    bb_pass="$(ask "$label" '' secret)"
+    bb_pass="${bb_pass:-$keep_pass}"
+  else bb_pass="$keep_pass"; fi
+
+  [ -n "$bb_pass" ] || die "A Baby Buddy password is required. Re-run with BABYBUDDY_PASSWORD='...' in front of bash."
+  case "$bb_url$bb_user$bb_pass" in *"'"*) die "Settings can't contain a single quote (')." ;; esac
+
   umask 077
-  cat > .env <<EOF
-BABYBUDDY_URL=$bb_url
-BABYBUDDY_TOKEN=
-BABYBUDDY_USER=$bb_user
-BABYBUDDY_PASSWORD=$bb_pass
-HOST_PORT=$HOST_PORT
-EOF
-  say "Saved settings to $INSTALL_DIR/.env (readable only by $USER)"
+  # Single quotes keep characters like $ and # literal for Docker Compose.
+  {
+    echo "BABYBUDDY_URL='$bb_url'"
+    echo "BABYBUDDY_TOKEN="
+    echo "BABYBUDDY_USER='$bb_user'"
+    echo "BABYBUDDY_PASSWORD='$bb_pass'"
+    echo "HOST_PORT=${saved_port:-$HOST_PORT}"
+  } > .env
+  chmod 600 .env
+  say "Saved settings for $bb_user to $INSTALL_DIR/.env (readable only by $USER)"
 elif ! grep -q '^HOST_PORT=' .env; then
   echo "HOST_PORT=$HOST_PORT" >> .env
 fi
 
 # Check Baby Buddy answers before building.
-bb_url="$(grep '^BABYBUDDY_URL=' .env | cut -d= -f2- || true)"
+bb_url="$(env_get BABYBUDDY_URL)"
 if ! curl -fsS -m 5 -o /dev/null "$bb_url/login/"; then
   warn "Could not reach Baby Buddy at $bb_url — the app will start, but check BABYBUDDY_URL in .env."
 fi
@@ -150,7 +211,7 @@ say "Starting the container"
 $COMPOSE up -d --no-build --remove-orphans
 $DOCKER image prune -f >/dev/null || true
 
-port="$(grep '^HOST_PORT=' .env | cut -d= -f2- || true)"
+port="$(env_get HOST_PORT)"
 port="${port:-$HOST_PORT}"
 say "Waiting for the app on port $port"
 for _ in $(seq 1 30); do
@@ -170,3 +231,4 @@ for _ in $(seq 1 30); do
 done
 $COMPOSE logs --tail 30
 die "The app did not become healthy on port $port."
+}
