@@ -75,4 +75,4 @@ Choosing **Both** creates one entry per child. Children are matched by first nam
 
 Feedings that were entered in Baby Buddy with other types (for example *solid food*) show their own type chip when edited, so saving doesn't change their type.
 
-Summary is a placeholder until that screen is designed.
+**History** (bottom nav) lists the last 30 days with day, child and type filters. Tap an entry to view, edit or delete it; deletes can be undone for 4 seconds (Baby Buddy has no restore, so undo re-creates the entry with a new id).

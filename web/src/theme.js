@@ -32,7 +32,7 @@ export const ICONS = {
 export const SW = { black: '#1E2328', brown: '#7A4B2A', green: '#5B7A3A', yellow: '#D9B23A' };
 
 export const NOUN = { Feeding: 'feeding', Pumping: 'pumping', Weight: 'weight', Sleep: 'sleep', Changes: 'diaper change', Notes: 'note' };
-export const TITLES = { Feeding: 'Add a feeding', Pumping: 'Add pumping', Weight: 'Add a weight', Sleep: 'Add sleep', Changes: 'Add a diaper change', Notes: 'Add a note', Timeline: 'Timeline', Summary: 'Summary' };
+export const TITLES = { Feeding: 'Add a feeding', Pumping: 'Add pumping', Weight: 'Add a weight', Sleep: 'Add sleep', Changes: 'Add a diaper change', Notes: 'Add a note', Timeline: 'Timeline', History: 'History' };
 export const EDIT_TITLES = { Feeding: 'Edit feeding', Pumping: 'Edit pumping', Weight: 'Edit weight', Sleep: 'Edit sleep', Changes: 'Edit diaper change', Notes: 'Edit note' };
 
 // Shared inline styles.

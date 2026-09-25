@@ -189,22 +189,26 @@ export function makeApi(twins) {
 
     latest,
 
-    // Every entry that starts within [dayStart, dayEnd), optionally for one twin.
-    async day(dayStart, dayEnd, twin) {
+    // Every entry that starts within [from, to), optionally for one twin.
+    async range(from, to, twin) {
       const child = twin && twin !== 'both' ? twins[twin].id : undefined;
       const lists = await Promise.all(
-        KINDS.map((kind) => {
+        KINDS.map(async (kind) => {
+          // Weight can only filter by an exact date, so fetch it all (it's small) and filter here.
           if (kind === 'Weight') {
-            const d = new Date(dayStart);
-            const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-            return list(kind, { child, date, limit: 100 }).then((rs) => rs.map(map(kind)));
+            const rs = (await list(kind, { child, limit: 1000 })).map(map(kind));
+            return rs.filter((e) => e.start >= from && e.start < to);
           }
           const [lo, hi] = RANGE[kind];
-          return list(kind, { child, [lo]: isoLocal(dayStart), [hi]: isoLocal(dayEnd - 1000), limit: 500 })
-            .then((rs) => rs.map(map(kind)));
+          const rs = await list(kind, { child, [lo]: isoLocal(from), [hi]: isoLocal(to - 1000), limit: 2000 });
+          return rs.map(map(kind));
         }),
       );
       return lists.flat();
+    },
+
+    day(dayStart, dayEnd, twin) {
+      return this.range(dayStart, dayEnd, twin);
     },
 
     // The newest entry of this kind/twin that started strictly before `before`.

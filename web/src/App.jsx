@@ -4,7 +4,7 @@ import { C, TITLES, EDIT_TITLES, NOUN, local, dateOnly, sod, dayLabel } from './
 import Home from './screens/Home.jsx';
 import EntryForm, { validate } from './screens/EntryForm.jsx';
 import Timeline from './screens/Timeline.jsx';
-import Summary from './screens/Summary.jsx';
+import History from './screens/History.jsx';
 import BottomNav from './components/BottomNav.jsx';
 import Toast from './components/Toast.jsx';
 import ErrorBanner from './components/ErrorBanner.jsx';
@@ -210,7 +210,7 @@ export default function App() {
       />
     );
   } else {
-    body = <Summary />;
+    body = <History api={api} names={names} />;
   }
 
   return (

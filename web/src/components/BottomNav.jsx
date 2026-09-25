@@ -4,12 +4,12 @@ import Icon from './Icon.jsx';
 const TABS = [
   { key: 'home', label: 'Home', d: 'M4 11l8-7 8 7v9h-5v-6H9v6H4z' },
   { key: 'Timeline', label: 'Timeline', d: 'M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01' },
-  { key: 'Summary', label: 'Summary', d: 'M6 20V11M12 20V5M18 20v-6' },
+  { key: 'History', label: 'History', d: 'M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2' },
 ];
 
 export default function BottomNav({ screen, onGo }) {
   // Entry forms belong to Home.
-  const active = screen === 'Timeline' || screen === 'Summary' ? screen : 'home';
+  const active = screen === 'Timeline' || screen === 'History' ? screen : 'home';
   return (
     <nav className="bottom-nav">
       {TABS.map((t) => {
