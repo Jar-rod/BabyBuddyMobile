@@ -19,11 +19,17 @@ die()  { printf '\033[1;31mxx\033[0m %s\n' "$*" >&2; exit 1; }
 # Read a value from the terminal even when this script is piped from curl.
 ask() {
   local prompt="$1" default="$2" secret="${3:-}" reply=""
+  # Prompt on the terminal itself (stdout is captured, stdin may be the curl pipe).
   # No usable terminal (e.g. run from a script): fall back to the default.
-  if [ -n "$secret" ]; then
-    { read -r -s -p "$prompt [$default]: " reply </dev/tty && echo >/dev/tty; } 2>/dev/null || true
-  else
-    read -r -p "$prompt [$default]: " reply </dev/tty 2>/dev/null || true
+  if { exec 3<>/dev/tty; } 2>/dev/null; then
+    printf '%s [%s]: ' "$prompt" "$default" >&3
+    if [ -n "$secret" ]; then
+      read -r -s reply <&3 || true
+      printf '\n' >&3
+    else
+      read -r reply <&3 || true
+    fi
+    exec 3>&-
   fi
   printf '%s' "${reply:-$default}"
 }
@@ -108,7 +114,7 @@ cd "$INSTALL_DIR"
 
 # ---- 3. Settings (first run only) -----------------------------------------------
 if [ ! -f .env ]; then
-  say "Configuring the connection to Baby Buddy"
+  say "Configuring the connection to Baby Buddy (press Enter to accept the [default])"
   host_ip="$(lan_ip)"
   bb_url="$(ask 'Baby Buddy URL' "http://${host_ip:-192.168.0.28}:8000")"
   bb_user="$(ask 'Baby Buddy username' 'admin')"
