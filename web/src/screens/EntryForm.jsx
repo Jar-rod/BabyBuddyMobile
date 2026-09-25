@@ -1,4 +1,4 @@
-import { C, S, TH, SW, parse, dur, clamp } from '../theme.js';
+import { C, S, TH, parse, dur, clamp } from '../theme.js';
 import Segmented from '../components/Segmented.jsx';
 import Chip from '../components/Chip.jsx';
 import Stepper from '../components/Stepper.jsx';
@@ -16,7 +16,6 @@ export function validate(kind, f) {
   if (kind === 'Notes' && !(f.note || '').trim()) return { error: 'Write a note first.' };
   if ((kind === 'Changes' || kind === 'Notes') && !ps) return { error: 'Please enter a time.' };
   if (kind === 'Weight' && !f.date) return { error: 'Please enter a date.' };
-  if (kind === 'Changes' && f.amount && isNaN(parseFloat(f.amount))) return { error: 'Amount must be a number.' };
   if ((kind === 'Pumping' || (kind === 'Feeding' && f.type !== 'breast')) && !(f.ml > 0)) return { error: 'Amount must be more than 0 ml.' };
 
   let data;
@@ -28,7 +27,7 @@ export function validate(kind, f) {
   if (kind === 'Pumping') data = { ml: f.ml };
   if (kind === 'Weight') data = { kg: f.kg };
   if (kind === 'Sleep') data = { nap: !!f.nap };
-  if (kind === 'Changes') data = { wet: !!f.wet, solid: !!f.solid, color: f.color, amount: (f.amount || '').trim() };
+  if (kind === 'Changes') data = { wet: !!f.wet, solid: !!f.solid };
   if (kind === 'Notes') data = { note: f.note.trim() };
   return {
     values: { start: ps, end: timed ? pe : null, date: f.date, data },
@@ -169,26 +168,6 @@ export default function EntryForm({ kind, form: f, setForm, editing, names, last
                 ))}
               </div>
             </div>
-            <div style={S.group}>
-              <div style={S.eyebrow}>Colour</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8 }}>
-                {Object.keys(SW).map((c) => (
-                  <button
-                    key={c}
-                    aria-pressed={f.color === c}
-                    onClick={() => setForm({ color: f.color === c ? '' : c })}
-                    style={{ height: 64, border: `1.5px solid ${f.color === c ? C.ink : C.line}`, borderRadius: 14, background: f.color === c ? C.sand : C.white, color: C.ink, fontSize: 13, fontWeight: 600, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}
-                  >
-                    <span style={{ width: 18, height: 18, borderRadius: 9, background: SW[c] }} />
-                    {c.charAt(0).toUpperCase() + c.slice(1)}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <label style={S.labelBlock}>
-              Amount (optional)
-              <input type="text" inputMode="decimal" value={f.amount || ''} onChange={(ev) => setForm({ amount: ev.target.value })} placeholder="e.g. 20" style={S.input} />
-            </label>
           </>
         )}
 

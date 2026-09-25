@@ -117,7 +117,7 @@ export default function App() {
       Pumping: { child: c, ml: 120, start: local(now - 20 * 60000), end: local(now) },
       Weight: { child: c, kg: lastKg(c), date: dateOnly(now) },
       Sleep: { child: c, nap: true, start: local(now - 60 * 60000), end: local(now) },
-      Changes: { child: c, wet: true, solid: false, color: '', amount: '', start: local(now) },
+      Changes: { child: c, wet: true, solid: false, start: local(now) },
       Notes: { child: c, note: '', start: local(now) },
     }[kind];
   };

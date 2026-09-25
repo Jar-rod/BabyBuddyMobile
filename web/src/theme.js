@@ -94,7 +94,7 @@ export function describe(e, names) {
   if (e.kind === 'Sleep') return { title: n + (d.nap ? ' had a nap.' : ' slept.'), detail: hm(e.start) + '–' + hm(e.end) + ' · ' + dur(mins) };
   if (e.kind === 'Changes') {
     const c = [d.wet ? 'Wet' : '', d.solid ? 'solid' : ''].filter(Boolean).join(' + ') || 'Dry';
-    return { title: n + ' had a diaper change.', detail: c.charAt(0).toUpperCase() + c.slice(1) + (d.color ? ' · ' + d.color : '') + (d.amount ? ' · ' + d.amount : '') };
+    return { title: n + ' had a diaper change.', detail: c.charAt(0).toUpperCase() + c.slice(1) };
   }
   return { title: 'Note about ' + n + '.', detail: d.note };
 }

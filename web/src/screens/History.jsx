@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ICONS, SW, hm, local, dateOnly, dur, sod, clamp } from '../theme.js';
+import { ICONS, hm, local, dateOnly, dur, sod, clamp } from '../theme.js';
 import Icon from '../components/Icon.jsx';
 import { KINDS } from '../api.js';
 import { validate } from './EntryForm.jsx';
@@ -51,10 +51,8 @@ function describe(e, names) {
     rows.push(['Duration', dur(mins)], ['Nap', d.nap ? 'Yes' : 'No']);
   } else if (e.kind === 'Changes') {
     const c = cap([d.wet ? 'wet' : '', d.solid ? 'solid' : ''].filter(Boolean).join(' + ')) || 'Dry';
-    title = n + ' had a diaper change'; detail = c + (d.color ? ' · ' + d.color : '');
+    title = n + ' had a diaper change'; detail = c;
     rows.push(['Contents', c]);
-    if (d.color) rows.push(['Colour', cap(d.color)]);
-    if (d.amount) rows.push(['Amount', d.amount]);
   } else {
     title = 'Note about ' + n; detail = d.note;
     rows.push(['Note', d.note]);
@@ -146,7 +144,7 @@ export default function History({ api, names }) {
   const startEdit = () => {
     setDraftState({
       child: cur.twin, start: local(cur.start), end: cur.end ? local(cur.end) : '', date: dateOnly(cur.start),
-      type: 'formula', ml: 90, side: 'L', kg: 3, nap: false, wet: false, solid: false, color: '', amount: '', note: '',
+      type: 'formula', ml: 90, side: 'L', kg: 3, nap: false, wet: false, solid: false, note: '',
       ...cur.data,
     });
     setErr(null);
@@ -359,13 +357,6 @@ function Sheet({ cur, names, sheet, setSheet, draft: dr, setDraft, err, busy, st
           <>
             <div className="grid2">
               {[['wet', 'Wet'], ['solid', 'Solid']].map(([v, l]) => <button key={v} className="toggle" aria-pressed={!!dr[v]} onClick={() => setDraft({ [v]: !dr[v] })}>{l}</button>)}
-            </div>
-            <div className="grid4">
-              {Object.keys(SW).map((c) => (
-                <button key={c} className="color" aria-pressed={dr.color === c} onClick={() => setDraft({ color: dr.color === c ? '' : c })}>
-                  <span className="sw" style={{ background: SW[c] }} />{cap(c)}
-                </button>
-              ))}
             </div>
           </>
         )}

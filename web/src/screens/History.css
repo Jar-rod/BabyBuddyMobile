@@ -84,12 +84,8 @@
 .hist-layer .pill { height: 44px; padding: 0 16px; border: 1.5px solid var(--line-2); border-radius: 22px; background: #fff; font-size: 15px; font-weight: 600; }
 .hist-layer .pill[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
 .hist-layer .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.hist-layer .grid4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .hist-layer .toggle { height: 48px; border: 1.5px solid var(--line-2); border-radius: 14px; background: #fff; font-size: 15px; font-weight: 600; }
 .hist-layer .toggle[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
-.hist-layer .color { height: 60px; border: 1.5px solid var(--line-2); border-radius: 14px; background: #fff; font-size: 13px; font-weight: 600; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
-.hist-layer .color[aria-pressed="true"] { border-color: var(--ink); background: var(--sand); }
-.hist-layer .color .sw { width: 16px; height: 16px; border-radius: 8px; }
 .hist-layer .error { padding: 12px 14px; border-radius: 14px; background: var(--danger-tint); color: var(--danger-ink); font-size: 14px; font-weight: 500; }
 
 .hist-layer.hist-toast { position: absolute; left: 20px; right: 20px; top: calc(16px + env(safe-area-inset-top)); z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: 12px;

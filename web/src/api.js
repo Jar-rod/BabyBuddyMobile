@@ -146,13 +146,9 @@ function toApi(kind, childId, v) {
       return { child: childId, weight: v.data.kg, date: v.date };
     case 'Sleep':
       return { child: childId, start: isoLocal(v.start), end: isoLocal(v.end), nap: v.data.nap };
-    case 'Changes': {
-      const amt = parseFloat(v.data.amount);
-      return {
-        child: childId, time: isoLocal(v.start), wet: v.data.wet, solid: v.data.solid,
-        color: v.data.color || '', amount: isNaN(amt) ? null : amt,
-      };
-    }
+    case 'Changes':
+      // Colour and amount aren't captured; leaving them out keeps any stored values on edit.
+      return { child: childId, time: isoLocal(v.start), wet: v.data.wet, solid: v.data.solid };
     case 'Notes':
       return { child: childId, time: isoLocal(v.start), note: v.data.note };
     default:
