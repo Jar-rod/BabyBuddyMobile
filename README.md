@@ -1,16 +1,16 @@
 # Twin log
 
-A phone-friendly front-end for [Baby Buddy](https://docs.baby-buddy.net/) that logs Levi's and Liam's feeds, pumping, weights, sleep, nappy changes and notes. The screens follow the design in `../H3 · Levi & Liam log (interactive)-html/`.
+A phone-friendly front-end for [Baby Buddy](https://docs.baby-buddy.net/) that logs Levi's and Liam's feeds, pumping, weights, sleep, nappy changes and notes. The screens follow the designs *H3 · Levi & Liam log* and *history_1*.
 
 ```
-phone ──► Twin log :8090 ──/api/*──► Baby Buddy :8000 (Raspberry Pi)
+phone ──► Twin log :8001 ──/api/*──► Baby Buddy :8000 (Raspberry Pi)
           (Express: serves the UI,     adds "Authorization: Token …"
            proxies the API)
 ```
 
 Baby Buddy's API sends no CORS headers, so the browser can't call it directly. The small Express server proxies `/api/*` and attaches the API token. The login details stay on the server and never reach the phone.
 
-> **The app has no login of its own.** Anyone who can reach port 8090 can read and write entries. Keep it on the home network.
+> **The app has no login of its own.** Anyone who can reach port 8001 can read and write entries. Keep it on the home network.
 
 ## Configure
 
@@ -26,12 +26,12 @@ Also set `BABYBUDDY_URL`, which defaults to `http://192.168.0.28:8000`.
 ```bash
 cd app && npm install
 npm run dev          # Express on :8091 (inspector on :9229) + Vite on :5173
-                     # (also works from the workspace root; :8090 stays free for Docker)
+                     # (also works from the workspace root; doesn't clash with Docker on :8001)
 ```
 
 Open http://localhost:5173. Your phone can also use `http://<mac-ip>:5173` on the same Wi-Fi.
 
-Launch configurations (Run and Debug panel, at the workspace root):
+Launch configurations (Run and Debug panel; they live in the parent workspace's `.vscode/`):
 
 | Config | What it does |
 |---|---|
@@ -40,22 +40,35 @@ Launch configurations (Run and Debug panel, at the workspace root):
 | Chrome: phone view | Attaches Chrome to an already-running Vite. |
 | Attach to Docker (port 9229) | Debugs the proxy inside the container. Start the container with the **docker: up (debug)** task first. |
 
-## Run in Docker
+## Install on the Raspberry Pi
+
+On the Pi (over SSH or with a keyboard), run:
 
 ```bash
-docker compose up -d --build                       # http://localhost:8090
+curl -fsSL https://raw.githubusercontent.com/Jar-rod/BabyBuddyMobile/main/install-pi.sh | bash
+```
+
+[install-pi.sh](install-pi.sh) does the following:
+
+1. Installs git, Docker and the Compose plugin if they're missing.
+2. Clones this repo to `~/BabyBuddyMobile`, or updates it if it's already there.
+3. On the first run only, asks for the Baby Buddy URL, username and password and saves them to `~/BabyBuddyMobile/.env`. Only your user can read that file.
+4. Builds the image on the Pi (arm64) and starts it with `restart: unless-stopped`, so it comes back after a reboot.
+5. Waits until the app can read from Baby Buddy, then prints the address.
+
+Then open **http://192.168.0.28:8001** on your phone and use *Add to Home Screen* to get an app-like launcher.
+
+- **Update:** push to `main`, then run the same command again. Your `.env` settings are kept.
+- **From the Mac:** `./deploy-pi.sh pi@192.168.0.28` runs the installer on the Pi over SSH.
+- **Change the port:** edit `HOST_PORT` in `~/BabyBuddyMobile/.env` and run the installer again.
+- **Logs:** `cd ~/BabyBuddyMobile && docker compose logs -f`
+
+## Run in Docker locally
+
+```bash
+docker compose up -d --build                       # http://localhost:8001
 docker compose -f docker-compose.yml -f docker-compose.debug.yml up -d --build   # + inspector on :9229
 ```
-
-## Deploy to the Raspberry Pi
-
-The Pi needs Docker with the compose plugin. From the Mac:
-
-```bash
-./deploy-pi.sh pi@192.168.0.28
-```
-
-This copies the project to `~/babybuddy-mobile` on the Pi, builds the image there (arm64), and starts it with `restart: unless-stopped`. Then open **http://192.168.0.28:8090** on your phone and use *Add to Home Screen* to get an app-like launcher.
 
 ## How screens map to Baby Buddy
 

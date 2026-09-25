@@ -1,12 +1,7 @@
 #!/usr/bin/env bash
-# Copy the app to the Raspberry Pi and (re)start it with Docker Compose.
+# From the Mac: install or update Twin log on the Pi over SSH (runs install-pi.sh from GitHub).
 # Usage: ./deploy-pi.sh [user@host]   (default pi@192.168.0.28)
+# Push your changes to GitHub first — the Pi builds whatever is on main.
 set -euo pipefail
 TARGET="${1:-pi@192.168.0.28}"
-DIR="babybuddy-mobile"
-cd "$(dirname "$0")"
-rsync -av --delete --exclude node_modules --exclude web/dist --exclude .env ./ "$TARGET:$DIR/"
-# Copy .env only if the Pi doesn't have one yet, so edits made on the Pi survive.
-ssh "$TARGET" "test -f $DIR/.env" || scp .env "$TARGET:$DIR/.env"
-ssh "$TARGET" "cd $DIR && docker compose up -d --build && docker compose ps"
-echo "Open http://${TARGET#*@}:8090 on your phone."
+ssh -t "$TARGET" 'curl -fsSL https://raw.githubusercontent.com/Jar-rod/BabyBuddyMobile/main/install-pi.sh | bash'

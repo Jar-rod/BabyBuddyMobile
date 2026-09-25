@@ -5,7 +5,7 @@ services:
     container_name: twin-log
     restart: unless-stopped
     ports:
-      - "8090:8090"
+      - "${HOST_PORT:-8001}:8090"   # phone URL: http://<pi-ip>:8001
     env_file:
       - path: .env
         required: false
