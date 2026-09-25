@@ -139,8 +139,15 @@ if ! curl -fsS -m 5 -o /dev/null "$bb_url/login/"; then
 fi
 
 # ---- 4. Build and run ----------------------------------------------------------
-say "Building and starting the container (the first build on a Pi takes a few minutes)"
-$COMPOSE up -d --build --remove-orphans
+# Build with plain `docker build`: `compose --build` needs buildx >= 0.17, which Debian's
+# docker.io doesn't ship. Without buildx, use the classic builder.
+say "Building the image (the first build on a Pi takes a few minutes)"
+BUILDKIT=1
+docker buildx version >/dev/null 2>&1 || BUILDKIT=0
+${DOCKER_PREFIX}env DOCKER_BUILDKIT=$BUILDKIT docker build -t twin-log:latest . || die "Image build failed (see above)."
+
+say "Starting the container"
+$COMPOSE up -d --no-build --remove-orphans
 $DOCKER image prune -f >/dev/null || true
 
 port="$(grep '^HOST_PORT=' .env | cut -d= -f2- || true)"
