@@ -108,13 +108,14 @@ export default function App() {
 
   // ---- Navigation & forms --------------------------------------------------
   const lastKg = (t) => latest?.[t]?.Weight?.data.kg ?? 3.0;
+  const lastMl = (kind, t) => latest?.[t]?.lastMl?.[kind] ?? (kind === 'Feeding' ? 90 : 120);
 
   const defaults = (kind, child) => {
     const c = kind === 'Weight' && child === 'both' ? 'A' : child;
     const now = Date.now();
     return {
-      Feeding: { child: c, type: 'formula', ml: 90, side: 'L', start: local(now - 15 * 60000), end: local(now) },
-      Pumping: { child: c, ml: 120, start: local(now - 20 * 60000), end: local(now) },
+      Feeding: { child: c, type: 'formula', ml: lastMl('Feeding', c), side: 'L', start: local(now - 15 * 60000), end: local(now) },
+      Pumping: { child: c, ml: lastMl('Pumping', c), start: local(now - 20 * 60000), end: local(now) },
       Weight: { child: c, kg: lastKg(c), date: dateOnly(now) },
       Sleep: { child: c, nap: true, start: local(now - 60 * 60000), end: local(now) },
       Changes: { child: c, wet: true, solid: false, start: local(now) },
@@ -196,7 +197,7 @@ export default function App() {
   } else if (isForm) {
     body = (
       <EntryForm
-        kind={screen} form={form} setForm={setForm} editing={!!edit} names={names} lastKg={lastKg}
+        kind={screen} form={form} setForm={setForm} editing={!!edit} names={names} lastKg={lastKg} lastMl={lastMl}
         error={formError} saving={saving} onSave={save} onRemove={remove}
       />
     );

@@ -170,6 +170,13 @@ export function makeApi(twins) {
     return r ? map(kind)(r) : null;
   };
 
+  // Most recent bottle/pump amount (ml); breast feeds have no amount, so skip them.
+  const lastMl = async (kind, twin) => {
+    const rs = await list(kind, { child: twins[twin].id, limit: 20 });
+    const r = rs.find((x) => x.amount != null && Number(x.amount) > 0);
+    return r ? Math.round(Number(r.amount)) : null;
+  };
+
   return {
     // Latest feed/sleep/change/weight/pumping per twin, for the home "today" card.
     async latestAll() {
@@ -177,7 +184,11 @@ export function makeApi(twins) {
       await Promise.all(
         Object.keys(twins).flatMap((t) => {
           out[t] = {};
-          return ['Feeding', 'Sleep', 'Changes', 'Weight'].map(async (k) => { out[t][k] = await latest(k, t); });
+          out[t].lastMl = {};
+          return [
+            ...['Feeding', 'Sleep', 'Changes', 'Weight'].map(async (k) => { out[t][k] = await latest(k, t); }),
+            ...['Feeding', 'Pumping'].map(async (k) => { out[t].lastMl[k] = await lastMl(k, t); }),
+          ];
         }),
       );
       return out;

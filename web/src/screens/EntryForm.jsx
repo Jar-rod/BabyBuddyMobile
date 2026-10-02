@@ -35,7 +35,7 @@ export function validate(kind, f) {
   };
 }
 
-export default function EntryForm({ kind, form: f, setForm, editing, names, lastKg, error, saving, onSave, onRemove }) {
+export default function EntryForm({ kind, form: f, setForm, editing, names, lastKg, lastMl, error, saving, onSave, onRemove }) {
   const fc = f.child || 'A';
   const fth = TH[fc] || TH.A;
   const childKeys = kind === 'Weight' || editing ? ['A', 'B'] : ['A', 'B', 'both'];
@@ -59,7 +59,11 @@ export default function EntryForm({ kind, form: f, setForm, editing, names, last
           <Segmented
             options={childOpts}
             value={fc}
-            onPick={(k) => setForm(kind === 'Weight' ? { child: k, kg: lastKg(k) } : { child: k })}
+            onPick={(k) => setForm(
+              kind === 'Weight' ? { child: k, kg: lastKg(k) }
+                : (kind === 'Feeding' || kind === 'Pumping') && !editing && k !== 'both' ? { child: k, ml: lastMl(kind, k) }
+                  : { child: k },
+            )}
           />
         </div>
 
