@@ -95,8 +95,8 @@ export default function EntryForm({ kind, form: f, setForm, editing, names, last
             <Stepper
               value={f.ml}
               unit="ml"
-              onDown={() => setForm({ ml: clamp((f.ml || 0) - 10, 0, 400) })}
-              onUp={() => setForm({ ml: clamp((f.ml || 0) + 10, 0, 400) })}
+              onDown={() => setForm({ ml: clamp((f.ml || 0) - 1, 0, 400) })}
+              onUp={() => setForm({ ml: clamp((f.ml || 0) + 1, 0, 400) })}
             />
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8 }}>
               {[60, 90, 120, 150].map((v) => (
