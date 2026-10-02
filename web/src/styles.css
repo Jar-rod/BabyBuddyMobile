@@ -29,7 +29,7 @@ input, textarea { outline-color: #2B5F7A; }
   right: 0;
   bottom: 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   padding: 8px 12px calc(14px + env(safe-area-inset-bottom));
   border-top: 1px solid #F1EEE9;
   background: #FFFFFF;

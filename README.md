@@ -94,3 +94,5 @@ Choosing **Both** creates one entry per child. Children are matched by first nam
 Feedings that were entered in Baby Buddy with other types (for example *solid food*) show their own type chip when edited, so saving doesn't change their type.
 
 **History** (bottom nav) lists the last 30 days with day, child and type filters. Tap an entry to view, edit or delete it; deletes can be undone for 4 seconds (Baby Buddy has no restore, so undo re-creates the entry with a new id).
+
+**Reports** (bottom nav) draws line graphs for Feeding, Pumping, Diapers and Weight, with Levi and Liam on one chart. Feeding and pumping show the daily total in ml over 7, 30 or 90 days (breast feeds have no amount, so they aren't counted). Diapers shows how many changes there were each day. Weight shows every reading over 30 days, 90 days or all time. Tap the chart to read the values for a day.

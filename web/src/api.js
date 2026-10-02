@@ -177,6 +177,17 @@ export function makeApi(twins) {
     return r ? Math.round(Number(r.amount)) : null;
   };
 
+  const rangeKind = async (kind, from, to, child) => {
+    // Weight can only filter by an exact date, so fetch it all (it's small) and filter here.
+    if (kind === 'Weight') {
+      const rs = (await list(kind, { child, limit: 1000 })).map(map(kind));
+      return rs.filter((e) => e.start >= from && e.start < to);
+    }
+    const [lo, hi] = RANGE[kind];
+    const rs = await list(kind, { child, [lo]: isoLocal(from), [hi]: isoLocal(to - 1000), limit: 2000 });
+    return rs.map(map(kind));
+  };
+
   return {
     // Latest feed/sleep/change/weight/pumping per twin, for the home "today" card.
     async latestAll() {
@@ -199,19 +210,13 @@ export function makeApi(twins) {
     // Every entry that starts within [from, to), optionally for one twin.
     async range(from, to, twin) {
       const child = twin && twin !== 'both' ? twins[twin].id : undefined;
-      const lists = await Promise.all(
-        KINDS.map(async (kind) => {
-          // Weight can only filter by an exact date, so fetch it all (it's small) and filter here.
-          if (kind === 'Weight') {
-            const rs = (await list(kind, { child, limit: 1000 })).map(map(kind));
-            return rs.filter((e) => e.start >= from && e.start < to);
-          }
-          const [lo, hi] = RANGE[kind];
-          const rs = await list(kind, { child, [lo]: isoLocal(from), [hi]: isoLocal(to - 1000), limit: 2000 });
-          return rs.map(map(kind));
-        }),
-      );
-      return lists.flat();
+      return (await Promise.all(KINDS.map((kind) => rangeKind(kind, from, to, child)))).flat();
+    },
+
+    // One kind only, for every child (or just `twin`).
+    async rangeOf(kind, from, to, twin) {
+      const child = twin && twin !== 'both' ? twins[twin].id : undefined;
+      return rangeKind(kind, from, to, child);
     },
 
     day(dayStart, dayEnd, twin) {

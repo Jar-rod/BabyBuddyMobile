@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { loadChildren, makeApi } from './api.js';
 import { C, TITLES, EDIT_TITLES, NOUN, local, dateOnly, sod, dayLabel } from './theme.js';
 import Home from './screens/Home.jsx';
+import Reports from './screens/Reports.jsx';
 import EntryForm, { validate } from './screens/EntryForm.jsx';
 import Timeline from './screens/Timeline.jsx';
 import History from './screens/History.jsx';
@@ -210,6 +211,8 @@ export default function App() {
         loading={tlLoading} error={tlError} onRetry={loadTimeline} onEdit={openEdit}
       />
     );
+  } else if (screen === 'Reports') {
+    body = <Reports api={api} names={names} />;
   } else {
     body = <History api={api} names={names} />;
   }
