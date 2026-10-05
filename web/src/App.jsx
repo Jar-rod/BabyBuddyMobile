@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { loadChildren, makeApi } from './api.js';
-import { C, TITLES, EDIT_TITLES, NOUN, local, dateOnly, sod, dayLabel } from './theme.js';
+import { C, TITLES, EDIT_TITLES, NOUN, local, roundHalfHour, dateOnly, sod, dayLabel } from './theme.js';
 import Home from './screens/Home.jsx';
 import Reports from './screens/Reports.jsx';
 import EntryForm, { validate } from './screens/EntryForm.jsx';
@@ -113,10 +113,10 @@ export default function App() {
 
   const defaults = (kind, child) => {
     const c = kind === 'Weight' && child === 'both' ? 'A' : child;
-    const now = Date.now();
+    const now = roundHalfHour(Date.now());
     return {
-      Feeding: { child: c, type: 'formula', ml: lastMl('Feeding', c), side: 'L', start: local(now - 15 * 60000), end: local(now) },
-      Pumping: { child: c, ml: lastMl('Pumping', c), start: local(now - 20 * 60000), end: local(now) },
+      Feeding: { child: c, type: 'formula', ml: lastMl('Feeding', c), side: 'L', start: local(now), end: local(now + 30 * 60000) },
+      Pumping: { child: c, ml: lastMl('Pumping', c), start: local(now), end: local(now + 30 * 60000) },
       Weight: { child: c, kg: lastKg(c), date: dateOnly(now) },
       Sleep: { child: c, nap: true, start: local(now - 60 * 60000), end: local(now) },
       Changes: { child: c, wet: true, solid: false, start: local(now) },

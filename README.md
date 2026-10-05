@@ -96,3 +96,5 @@ Feedings that were entered in Baby Buddy with other types (for example *solid fo
 **History** (bottom nav) lists the last 30 days with day, child and type filters. Tap an entry to view, edit or delete it; deletes can be undone for 4 seconds (Baby Buddy has no restore, so undo re-creates the entry with a new id).
 
 **Reports** (bottom nav) draws line graphs for Feeding, Pumping, Diapers and Weight, with Levi and Liam on one chart. Feeding and pumping show the daily total in ml over 7, 30 or 90 days (breast feeds have no amount, so they aren't counted). Diapers shows how many changes there were each day. Weight shows every reading over 30 days, 90 days or all time. Tap the chart to read the values for a day.
+
+Times are chosen in 30-minute steps (date picker plus a half-hour dropdown). Feedings have no end time; they run 30 minutes from the start. Sleep and Pumping are hidden from Home and Reports, but existing entries still appear in Timeline and History and can be edited.

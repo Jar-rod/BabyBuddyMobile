@@ -52,7 +52,10 @@ const DN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 export const pad = (x) => String(x).padStart(2, '0');
 export const hm = (ms) => { const d = new Date(ms); return pad(d.getHours()) + ':' + pad(d.getMinutes()); };
 export const local = (ms) => { const d = new Date(ms); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes()); };
+export const roundHalfHour = (ms) => Math.round(ms / 1800000) * 1800000;
 export const dateOnly = (ms) => local(ms).slice(0, 10);
+// Feedings have no end time of their own: they run 30 minutes from the start ("YYYY-MM-DDTHH:mm" in and out).
+export const feedEnd = (start) => { const t = parse(start); return t == null ? start : local(t + 1800000); };
 export const parse = (str) => { const t = new Date(str).getTime(); return isNaN(t) ? null : t; };
 export const dur = (mins) => {
   mins = Math.round(mins);

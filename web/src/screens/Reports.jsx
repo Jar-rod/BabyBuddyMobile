@@ -4,10 +4,9 @@ import Segmented from '../components/Segmented.jsx';
 import ErrorBanner from '../components/ErrorBanner.jsx';
 import LineChart from '../components/LineChart.jsx';
 
-const KIND_OPTS = [['Feeding', 'Feeding'], ['Pumping', 'Pumping'], ['Changes', 'Diapers'], ['Weight', 'Weight']].map(([k, label]) => ({ key: k, label }));
+const KIND_OPTS = [['Feeding', 'Feeding'], ['Changes', 'Diapers'], ['Weight', 'Weight']].map(([k, label]) => ({ key: k, label }));
 const RANGES = {
   Feeding: [7, 30, 90],
-  Pumping: [7, 30, 90],
   Changes: [7, 30, 90],
   Weight: [30, 90, 0], // 0 = all time
 };

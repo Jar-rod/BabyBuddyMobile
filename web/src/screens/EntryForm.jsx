@@ -1,6 +1,7 @@
-import { C, S, TH, parse, dur, clamp } from '../theme.js';
+import { C, S, TH, parse, dur, clamp, feedEnd } from '../theme.js';
 import Segmented from '../components/Segmented.jsx';
 import Chip from '../components/Chip.jsx';
+import DateTimeField from '../components/DateTimeField.jsx';
 import Stepper from '../components/Stepper.jsx';
 import ErrorBanner from '../components/ErrorBanner.jsx';
 
@@ -50,6 +51,7 @@ export default function EntryForm({ kind, form: f, setForm, editing, names, last
   }
   const showMl = kind === 'Pumping' || (kind === 'Feeding' && f.type !== 'breast');
   const showStart = kind !== 'Weight';
+  const showEnd = timed && kind !== 'Feeding'; // feedings end 30 minutes after the start
 
   return (
     <>
@@ -138,14 +140,14 @@ export default function EntryForm({ kind, form: f, setForm, editing, names, last
         {showStart && (
           <label style={S.labelBlock}>
             {timed ? 'Start time' : 'Time'}
-            <input type="datetime-local" value={f.start || ''} onChange={(ev) => setForm({ start: ev.target.value })} style={S.input} />
+            <DateTimeField value={f.start} onChange={(v) => setForm(kind === 'Feeding' ? { start: v, end: feedEnd(v) } : { start: v })} style={S.input} />
           </label>
         )}
-        {timed && (
+        {showEnd && (
           <>
             <label style={S.labelBlock}>
               End time
-              <input type="datetime-local" value={f.end || ''} onChange={(ev) => setForm({ end: ev.target.value })} style={S.input} />
+              <DateTimeField value={f.end} onChange={(v) => setForm({ end: v })} style={S.input} />
             </label>
             <div style={{ fontSize: 14, color: durColor, marginTop: -10 }}>{durText}</div>
           </>

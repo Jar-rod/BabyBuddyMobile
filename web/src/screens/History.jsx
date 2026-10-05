@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ICONS, hm, local, dateOnly, dur, sod, clamp } from '../theme.js';
+import { ICONS, hm, local, dateOnly, dur, sod, clamp, feedEnd } from '../theme.js';
 import Icon from '../components/Icon.jsx';
+import DateTimeField from '../components/DateTimeField.jsx';
 import { KINDS } from '../api.js';
 import { validate } from './EntryForm.jsx';
 import './History.css';
@@ -320,10 +321,10 @@ function Sheet({ cur, names, sheet, setSheet, draft: dr, setDraft, err, busy, st
         {k === 'Weight' ? (
           <label className="field">Date<input className="input" type="date" value={dr.date || ''} onChange={(ev) => setDraft({ date: ev.target.value })} /></label>
         ) : (
-          <label className="field">{cur.end ? 'Start time' : 'Time'}<input className="input" type="datetime-local" value={dr.start || ''} onChange={(ev) => setDraft({ start: ev.target.value })} /></label>
+          <label className="field">{cur.end ? 'Start time' : 'Time'}<DateTimeField className="input" value={dr.start} onChange={(v) => setDraft(k === 'Feeding' ? { start: v, end: feedEnd(v) } : { start: v })} /></label>
         )}
-        {cur.end && (
-          <label className="field">End time<input className="input" type="datetime-local" value={dr.end || ''} onChange={(ev) => setDraft({ end: ev.target.value })} /></label>
+        {cur.end && k !== 'Feeding' && (
+          <label className="field">End time<DateTimeField className="input" value={dr.end} onChange={(v) => setDraft({ end: v })} /></label>
         )}
 
         {k === 'Feeding' && (
@@ -338,9 +339,9 @@ function Sheet({ cur, names, sheet, setSheet, draft: dr, setDraft, err, busy, st
         )}
         {showMl && (
           <div className="stepper">
-            <button aria-label="Less" onClick={() => setDraft({ ml: clamp((dr.ml || 0) - 10, 0, 400) })}>−</button>
+            <button aria-label="Less" onClick={() => setDraft({ ml: clamp((dr.ml || 0) - 1, 0, 400) })}>−</button>
             <div className="val">{dr.ml || 0} <span className="unit">ml</span></div>
-            <button aria-label="More" onClick={() => setDraft({ ml: clamp((dr.ml || 0) + 10, 0, 400) })}>+</button>
+            <button aria-label="More" onClick={() => setDraft({ ml: clamp((dr.ml || 0) + 1, 0, 400) })}>+</button>
           </div>
         )}
         {k === 'Weight' && (

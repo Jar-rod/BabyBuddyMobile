@@ -1,4 +1,4 @@
-import { C, S, TH, ICONS, hm, dur, describe } from '../theme.js';
+import { C, S, TH, ICONS, hm, describe } from '../theme.js';
 import Icon from '../components/Icon.jsx';
 import Segmented from '../components/Segmented.jsx';
 import ErrorBanner from '../components/ErrorBanner.jsx';
@@ -18,21 +18,19 @@ function todayRows(who, latest, names) {
     const at = (t, k) => { const e = get(t, k); return e ? hm(e.start) : '—'; };
     return [
       { k: 'Last feed', v: `${names.A} ${at('A', 'Feeding')} · ${names.B} ${at('B', 'Feeding')}` },
-      { k: 'Last sleep', v: ['A', 'B'].map((t) => { const e = get(t, 'Sleep'); return names[t] + ' ' + (e && e.end ? dur((e.end - e.start) / 60000) : '—'); }).join(' · ') },
       { k: 'Last change', v: `${names.A} ${at('A', 'Changes')} · ${names.B} ${at('B', 'Changes')}` },
       { k: 'Weight', v: `${kgText('A')} · ${kgText('B')} kg` },
     ];
   }
-  const lf = get(who, 'Feeding'), ls = get(who, 'Sleep'), lc = get(who, 'Changes'), lw = get(who, 'Weight');
+  const lf = get(who, 'Feeding'), lc = get(who, 'Changes'), lw = get(who, 'Weight');
   return [
     { k: 'Last feed', v: lf ? hm(lf.start) + ' · ' + (lf.data.type === 'breast' ? 'breast' : lf.data.ml != null ? lf.data.ml + ' ml' : lf.data.label || '') : '—' },
-    { k: 'Last sleep', v: ls ? hm(ls.start) + '–' + hm(ls.end) : '—' },
     { k: 'Last change', v: lc ? hm(lc.start) + ' · ' + describe(lc, names).detail.toLowerCase() : '—' },
     { k: 'Weight', v: lw ? lw.data.kg.toFixed(2) + ' kg' : '—' },
   ];
 }
 
-const TILES = ['Feeding', 'Pumping', 'Weight', 'Sleep', 'Changes', 'Notes', 'Timeline'];
+const TILES = ['Feeding', 'Weight', 'Changes', 'Notes', 'Timeline'];
 
 export default function Home({ who, setWho, names, latest, loading, error, onRetry, onOpen }) {
   const th = TH[who];
@@ -44,7 +42,7 @@ export default function Home({ who, setWho, names, latest, loading, error, onRet
         <Segmented options={whoOptions(names)} value={who} onPick={setWho} />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
         {TILES.map((k) => {
           const wide = k === 'Timeline';
           return (
@@ -52,7 +50,7 @@ export default function Home({ who, setWho, names, latest, loading, error, onRet
               key={k}
               onClick={() => onOpen(k)}
               style={{
-                height: wide ? 64 : 100, gridColumn: `span ${wide ? 3 : 1}`, border: 0, borderRadius: 20,
+                height: wide ? 64 : 100, gridColumn: `span ${wide ? 2 : 1}`, border: 0, borderRadius: 20,
                 background: th.tint, color: th.ink, display: 'flex', flexDirection: wide ? 'row' : 'column',
                 alignItems: 'center', justifyContent: 'center', gap: 10,
               }}
