@@ -111,11 +111,18 @@ export default function App() {
   const lastKg = (t) => latest?.[t]?.Weight?.data.kg ?? 3.0;
   const lastMl = (kind, t) => latest?.[t]?.lastMl?.[kind] ?? (kind === 'Feeding' ? 90 : 120);
 
+  // The child's previous feeding type (and breast side), so the form starts where they left off.
+  const lastFeed = (t) => {
+    const d = latest?.[t]?.Feeding?.data;
+    const type = !d || d.type === 'other' ? 'formula' : d.type;
+    return { breast: type === 'breast', bottle: type === 'breast' ? '' : type, side: 'B' };
+  };
+
   const defaults = (kind, child) => {
     const c = kind === 'Weight' && child === 'both' ? 'A' : child;
     const now = roundHalfHour(Date.now());
     return {
-      Feeding: { child: c, type: 'formula', ml: lastMl('Feeding', c), side: 'L', start: local(now), end: local(now + 30 * 60000) },
+      Feeding: { child: c, ...lastFeed(c), ml: lastMl('Feeding', c), alsoChange: '', start: local(now), end: local(now + 30 * 60000) },
       Pumping: { child: c, ml: lastMl('Pumping', c), start: local(now), end: local(now + 30 * 60000) },
       Weight: { child: c, kg: lastKg(c), date: dateOnly(now) },
       Sleep: { child: c, nap: true, start: local(now - 60 * 60000), end: local(now) },
@@ -159,9 +166,12 @@ export default function App() {
     setSaving(true);
     try {
       if (edit) await api.update(kind, edit.id, res.kids[0], res.values);
-      else await api.create(kind, res.kids, res.values);
+      else for (const v of res.list) await api.create(kind, res.kids, v);
+      const withChange = !edit && kind === 'Feeding' && form.alsoChange;
+      const mix = !edit && kind === 'Feeding' && res.list.length > 1 ? ' (breast + ' + form.bottle + ')' : '';
+      if (withChange) await api.create('Changes', res.kids, { start: res.values.start, end: null, date: res.values.date, data: { wet: form.alsoChange === 'wet', solid: form.alsoChange === 'solid' } });
       const whoText = res.kids.map((k) => names[k]).join(' & ');
-      showToast((edit ? 'Updated · ' : 'Saved · ') + NOUN[kind] + ' for ' + whoText);
+      showToast((edit ? 'Updated · ' : 'Saved · ') + NOUN[kind] + mix + (withChange ? ' + ' + form.alsoChange + ' change' : '') + ' for ' + whoText);
       go(edit ? 'Timeline' : 'home');
     } catch (e) {
       setFormError(e.message);
@@ -198,7 +208,7 @@ export default function App() {
   } else if (isForm) {
     body = (
       <EntryForm
-        kind={screen} form={form} setForm={setForm} editing={!!edit} names={names} lastKg={lastKg} lastMl={lastMl}
+        kind={screen} form={form} setForm={setForm} editing={!!edit} names={names} lastKg={lastKg} lastMl={lastMl} lastFeed={lastFeed}
         error={formError} saving={saving} onSave={save} onRemove={remove}
       />
     );
