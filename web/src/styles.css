@@ -48,3 +48,6 @@ input, textarea { outline-color: #2B5F7A; }
   box-shadow: 0 8px 24px rgba(30, 35, 40, 0.25);
   z-index: 10;
 }
+
+/* iOS Safari sizes date inputs to their content; keep them inside their grid cell. */
+input[type='date'] { -webkit-appearance: none; appearance: none; min-width: 0; text-align: left; }
