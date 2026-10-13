@@ -69,9 +69,21 @@ export default function EntryForm({ kind, form: f, setForm, editing, names, last
   }
   const multi = kind === 'Feeding' && !editing;
   const showBreast = kind === 'Feeding' && (multi ? f.breast : f.type === 'breast');
-  const perKid = multi && fc === 'both' ? ['A', 'B'] : ['']; // one type and amount per child when feeding both
-  const mlKeys = multi ? perKid.filter((k) => f['bottle' + k]) : [''];
-  const showMl = kind === 'Pumping' || (kind === 'Feeding' && (multi ? mlKeys.length > 0 : f.type !== 'breast'));
+  const each = multi && fc === 'both'; // feeding both: one type and amount per child, grouped by child
+  const perKid = each ? ['A', 'B'] : [''];
+  const showMl = kind === 'Pumping' || (kind === 'Feeding' && !each && (multi ? !!f.bottle : f.type !== 'breast'));
+  // Amount stepper for the form's `ml`, or for one child's `mlA` / `mlB`.
+  const amount = (k) => (
+    <div style={S.group}>
+      <div style={S.eyebrow}>{k ? `Amount · ${names[k]}` : 'Amount'}</div>
+      <Stepper
+        value={f['ml' + k]}
+        unit="ml"
+        onDown={() => setForm({ ['ml' + k]: clamp((f['ml' + k] || 0) - 1, 0, 400) })}
+        onUp={() => setForm({ ['ml' + k]: clamp((f['ml' + k] || 0) + 1, 0, 400) })}
+      />
+    </div>
+  );
   const showStart = kind !== 'Weight';
   const showEnd = timed && kind !== 'Feeding'; // feedings end 30 minutes after the start
 
@@ -95,21 +107,24 @@ export default function EntryForm({ kind, form: f, setForm, editing, names, last
         {kind === 'Feeding' && (
           <>
             {perKid.map((c) => (
-              <div key={c} style={S.group}>
-                <div style={S.eyebrow}>{c ? `Type · ${names[c]}` : 'Type'}</div>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {/* Entries made in Baby Buddy with other types (e.g. solid food) keep their type when edited. */}
-                  {[['breast', 'Breast'], ['formula', 'Formula'], ['expressed', 'Expressed milk'], ...(f.label ? [['other', f.label.charAt(0).toUpperCase() + f.label.slice(1)]] : [])].map(([k, label]) => (
-                    <Chip
-                      key={k}
-                      on={multi ? (k === 'breast' ? !!f['breast' + c] : f['bottle' + c] === k) : f.type === k}
-                      activeBg={c ? TH[c].bg : undefined}
-                      onClick={() => setForm(!multi ? { type: k } : k === 'breast' ? { ['breast' + c]: !f['breast' + c] } : { ['bottle' + c]: f['bottle' + c] === k ? '' : k })}
-                    >
-                      {label}
-                    </Chip>
-                  ))}
+              <div key={c} style={{ ...S.group, gap: 14 }}>
+                <div style={S.group}>
+                  <div style={S.eyebrow}>{c ? `Type · ${names[c]}` : 'Type'}</div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {/* Entries made in Baby Buddy with other types (e.g. solid food) keep their type when edited. */}
+                    {[['breast', 'Breast'], ['formula', 'Formula'], ['expressed', 'Expressed milk'], ...(f.label ? [['other', f.label.charAt(0).toUpperCase() + f.label.slice(1)]] : [])].map(([k, label]) => (
+                      <Chip
+                        key={k}
+                        on={multi ? (k === 'breast' ? !!f['breast' + c] : f['bottle' + c] === k) : f.type === k}
+                        activeBg={c ? TH[c].bg : undefined}
+                        onClick={() => setForm(!multi ? { type: k } : k === 'breast' ? { ['breast' + c]: !f['breast' + c] } : { ['bottle' + c]: f['bottle' + c] === k ? '' : k })}
+                      >
+                        {label}
+                      </Chip>
+                    ))}
+                  </div>
                 </div>
+                {each && f['bottle' + c] && amount(c)}
               </div>
             ))}
             {showBreast && !multi && (
@@ -129,20 +144,7 @@ export default function EntryForm({ kind, form: f, setForm, editing, names, last
 
         {showMl && (
           <div style={S.group}>
-            {mlKeys.map((k) => {
-              const field = 'ml' + k;
-              return (
-                <div key={field} style={S.group}>
-                  <div style={S.eyebrow}>{k ? `Amount · ${names[k]}` : 'Amount'}</div>
-                  <Stepper
-                    value={f[field]}
-                    unit="ml"
-                    onDown={() => setForm({ [field]: clamp((f[field] || 0) - 1, 0, 400) })}
-                    onUp={() => setForm({ [field]: clamp((f[field] || 0) + 1, 0, 400) })}
-                  />
-                </div>
-              );
-            })}
+            {amount('')}
             {kind === 'Pumping' && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8 }}>
                 {[60, 90, 120, 150].map((v) => (

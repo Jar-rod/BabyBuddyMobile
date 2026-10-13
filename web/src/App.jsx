@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { loadChildren, makeApi } from './api.js';
-import { C, TITLES, EDIT_TITLES, NOUN, local, roundHalfHour, dateOnly, sod, dayLabel } from './theme.js';
+import { C, TITLES, EDIT_TITLES, NOUN, local, roundQuarterHour, dateOnly, sod, dayLabel } from './theme.js';
 import Home from './screens/Home.jsx';
 import Reports from './screens/Reports.jsx';
 import EntryForm, { validate } from './screens/EntryForm.jsx';
@@ -32,6 +32,7 @@ export default function App() {
   const [edit, setEdit] = useState(null); // { kind, id } while editing an existing entry
   const [formError, setFormError] = useState(null);
   const [saving, setSaving] = useState(false);
+  const sent = useRef(new Set()); // entries already created from the open form, so a retry after a failure skips them
   const setForm = (patch) => { setFormState((f) => ({ ...f, ...patch })); setFormError(null); };
 
   const [toast, setToastText] = useState(null);
@@ -126,7 +127,7 @@ export default function App() {
 
   const defaults = (kind, child) => {
     const c = kind === 'Weight' && child === 'both' ? 'A' : child;
-    const now = roundHalfHour(Date.now());
+    const now = roundQuarterHour(Date.now());
     return {
       Feeding: { child: c, ...lastFeed(c), ml: lastMl('Feeding', c), ...feedBoth(), alsoChange: '', start: local(now), end: local(now + 30 * 60000) },
       Pumping: { child: c, ml: lastMl('Pumping', c), start: local(now), end: local(now + 30 * 60000) },
@@ -148,6 +149,7 @@ export default function App() {
 
   const openTile = (kind) => {
     if (kind === 'Timeline') return navTo('Timeline');
+    sent.current.clear();
     setFormState(defaults(kind, who));
     setEdit(null);
     setFormError(null);
@@ -171,11 +173,25 @@ export default function App() {
     if (res.error) return setFormError(res.error);
     setSaving(true);
     try {
-      if (edit) await api.update(kind, edit.id, res.kids[0], res.values);
-      else for (const v of res.list) await api.create(kind, v.kids || res.kids, v);
       const withChange = !edit && kind === 'Feeding' && form.alsoChange;
       const mix = !edit && kind === 'Feeding' && form.child !== 'both' && res.list.length > 1 ? ' (breast + ' + form.bottle + ')' : '';
-      if (withChange) await api.create('Changes', res.kids, { start: res.values.start, end: null, date: res.values.date, data: { wet: form.alsoChange === 'wet', solid: form.alsoChange === 'solid' } });
+      if (edit) await api.update(kind, edit.id, res.kids[0], res.values);
+      else {
+        const change = { start: res.values.start, end: null, date: res.values.date, data: { wet: form.alsoChange === 'wet', solid: form.alsoChange === 'solid' } };
+        // The children save side by side; each child's own entries go in order and stop at the first failure.
+        const done = await Promise.allSettled(res.kids.map(async (k) => {
+          const jobs = res.list.filter((v) => !v.kids || v.kids.includes(k)).map((v) => [kind, v]);
+          if (withChange) jobs.push(['Changes', change]);
+          for (const [jk, v] of jobs) {
+            const key = JSON.stringify([jk, k, v]);
+            if (sent.current.has(key)) continue;
+            await api.create(jk, [k], v);
+            sent.current.add(key);
+          }
+        }));
+        const failed = done.find((d) => d.status === 'rejected');
+        if (failed) throw new Error(failed.reason.message + (sent.current.size ? ' Some entries were saved — Save again sends only the rest.' : ''));
+      }
       const whoText = res.kids.map((k) => names[k]).join(' & ');
       showToast((edit ? 'Updated · ' : 'Saved · ') + NOUN[kind] + mix + (withChange ? ' + ' + form.alsoChange + ' change' : '') + ' for ' + whoText);
       go(edit ? 'Timeline' : 'home');

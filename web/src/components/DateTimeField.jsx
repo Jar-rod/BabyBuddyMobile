@@ -1,9 +1,9 @@
 import { pad } from '../theme.js';
 
-const SLOTS = Array.from({ length: 48 }, (_, i) => pad(Math.floor(i / 2)) + ':' + (i % 2 ? '30' : '00'));
+const SLOTS = Array.from({ length: 96 }, (_, i) => pad(Math.floor(i / 4)) + ':' + pad((i % 4) * 15));
 
-// Date picker plus a half-hour dropdown. value / onChange use the "YYYY-MM-DDTHH:mm" form of datetime-local.
-// A time that isn't on the half hour (an older entry) gets its own option, so opening and saving it leaves it unchanged.
+// Date picker plus a 15-minute dropdown. value / onChange use the "YYYY-MM-DDTHH:mm" form of datetime-local.
+// A time that isn't on a quarter hour (an older entry) gets its own option, so opening and saving it leaves it unchanged.
 export default function DateTimeField({ value, onChange, className, style }) {
   const [date = '', time = ''] = (value || '').split('T');
   const times = time && !SLOTS.includes(time) ? [...SLOTS, time].sort() : SLOTS;
