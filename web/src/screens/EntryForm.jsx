@@ -19,19 +19,25 @@ export function validate(kind, f) {
   if (kind === 'Weight' && !f.date) return { error: 'Please enter a date.' };
   // New feedings pick breast and/or one bottle type; editing keeps the single `type` of the stored entry.
   const multi = kind === 'Feeding' && f.breast !== undefined;
-  if (multi && !f.breast && !f.bottle) return { error: 'Choose breast, formula or expressed milk.' };
-  const needsMl = multi ? !!f.bottle : kind === 'Feeding' && f.type !== 'breast';
-  if ((kind === 'Pumping' || needsMl) && !(f.ml > 0)) return { error: 'Amount must be more than 0 ml.' };
-
   const kids = f.child === 'both' ? ['A', 'B'] : [f.child];
   if (multi) {
-    // Breast first; a bottle in the same sitting follows it so the two entries don't overlap.
-    const bottleStart = f.breast ? pe : ps;
+    // Feeding both children takes a type and amount each (fields suffixed A / B), saved as separate entries.
+    const each = f.child === 'both';
     const list = [];
-    if (f.breast) list.push({ start: ps, end: pe, date: f.date, data: { type: 'breast', side: f.side } });
-    if (f.bottle) list.push({ start: bottleStart, end: bottleStart + (pe - ps), date: f.date, data: { type: f.bottle, ml: f.ml } });
+    for (const k of each ? kids : ['']) {
+      const breast = f['breast' + k], bottle = f['bottle' + k], ml = f['ml' + k];
+      if (!breast && !bottle) return { error: 'Choose breast, formula or expressed milk' + (each ? ' for each child.' : '.') };
+      if (bottle && !(ml > 0)) return { error: 'Amount must be more than 0 ml.' };
+      // Breast first; a bottle in the same sitting follows it so the two entries don't overlap.
+      const bottleStart = breast ? pe : ps;
+      const only = each && { kids: [k] };
+      if (breast) list.push({ start: ps, end: pe, date: f.date, data: { type: 'breast', side: f.side }, ...only });
+      if (bottle) list.push({ start: bottleStart, end: bottleStart + (pe - ps), date: f.date, data: { type: bottle, ml }, ...only });
+    }
     return { list, values: list[0], kids };
   }
+  const needsMl = kind === 'Feeding' && f.type !== 'breast';
+  if ((kind === 'Pumping' || needsMl) && !(f.ml > 0)) return { error: 'Amount must be more than 0 ml.' };
 
   let data;
   if (kind === 'Feeding') {
@@ -63,7 +69,9 @@ export default function EntryForm({ kind, form: f, setForm, editing, names, last
   }
   const multi = kind === 'Feeding' && !editing;
   const showBreast = kind === 'Feeding' && (multi ? f.breast : f.type === 'breast');
-  const showMl = kind === 'Pumping' || (kind === 'Feeding' && (multi ? !!f.bottle : f.type !== 'breast'));
+  const perKid = multi && fc === 'both' ? ['A', 'B'] : ['']; // one type and amount per child when feeding both
+  const mlKeys = multi ? perKid.filter((k) => f['bottle' + k]) : [''];
+  const showMl = kind === 'Pumping' || (kind === 'Feeding' && (multi ? mlKeys.length > 0 : f.type !== 'breast'));
   const showStart = kind !== 'Weight';
   const showEnd = timed && kind !== 'Feeding'; // feedings end 30 minutes after the start
 
@@ -86,21 +94,24 @@ export default function EntryForm({ kind, form: f, setForm, editing, names, last
 
         {kind === 'Feeding' && (
           <>
-            <div style={S.group}>
-              <div style={S.eyebrow}>Type</div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {/* Entries made in Baby Buddy with other types (e.g. solid food) keep their type when edited. */}
-                {[['breast', 'Breast'], ['formula', 'Formula'], ['expressed', 'Expressed milk'], ...(f.label ? [['other', f.label.charAt(0).toUpperCase() + f.label.slice(1)]] : [])].map(([k, label]) => (
-                  <Chip
-                    key={k}
-                    on={multi ? (k === 'breast' ? !!f.breast : f.bottle === k) : f.type === k}
-                    onClick={() => setForm(!multi ? { type: k } : k === 'breast' ? { breast: !f.breast } : { bottle: f.bottle === k ? '' : k })}
-                  >
-                    {label}
-                  </Chip>
-                ))}
+            {perKid.map((c) => (
+              <div key={c} style={S.group}>
+                <div style={S.eyebrow}>{c ? `Type · ${names[c]}` : 'Type'}</div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {/* Entries made in Baby Buddy with other types (e.g. solid food) keep their type when edited. */}
+                  {[['breast', 'Breast'], ['formula', 'Formula'], ['expressed', 'Expressed milk'], ...(f.label ? [['other', f.label.charAt(0).toUpperCase() + f.label.slice(1)]] : [])].map(([k, label]) => (
+                    <Chip
+                      key={k}
+                      on={multi ? (k === 'breast' ? !!f['breast' + c] : f['bottle' + c] === k) : f.type === k}
+                      activeBg={c ? TH[c].bg : undefined}
+                      onClick={() => setForm(!multi ? { type: k } : k === 'breast' ? { ['breast' + c]: !f['breast' + c] } : { ['bottle' + c]: f['bottle' + c] === k ? '' : k })}
+                    >
+                      {label}
+                    </Chip>
+                  ))}
+                </div>
               </div>
-            </div>
+            ))}
             {showBreast && !multi && (
               <div style={S.group}>
                 <div style={S.eyebrow}>Side</div>
@@ -118,13 +129,20 @@ export default function EntryForm({ kind, form: f, setForm, editing, names, last
 
         {showMl && (
           <div style={S.group}>
-            <div style={S.eyebrow}>Amount</div>
-            <Stepper
-              value={f.ml}
-              unit="ml"
-              onDown={() => setForm({ ml: clamp((f.ml || 0) - 1, 0, 400) })}
-              onUp={() => setForm({ ml: clamp((f.ml || 0) + 1, 0, 400) })}
-            />
+            {mlKeys.map((k) => {
+              const field = 'ml' + k;
+              return (
+                <div key={field} style={S.group}>
+                  <div style={S.eyebrow}>{k ? `Amount · ${names[k]}` : 'Amount'}</div>
+                  <Stepper
+                    value={f[field]}
+                    unit="ml"
+                    onDown={() => setForm({ [field]: clamp((f[field] || 0) - 1, 0, 400) })}
+                    onUp={() => setForm({ [field]: clamp((f[field] || 0) + 1, 0, 400) })}
+                  />
+                </div>
+              );
+            })}
             {kind === 'Pumping' && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8 }}>
                 {[60, 90, 120, 150].map((v) => (

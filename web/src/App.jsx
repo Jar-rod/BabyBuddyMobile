@@ -118,11 +118,17 @@ export default function App() {
     return { breast: type === 'breast', bottle: type === 'breast' ? '' : type, side: 'B' };
   };
 
+  // Per-child feeding fields (breastA, bottleA, mlA, …) for the form's Both mode.
+  const feedBoth = () => Object.assign({}, ...['A', 'B'].map((t) => {
+    const { breast, bottle } = lastFeed(t);
+    return { ['breast' + t]: breast, ['bottle' + t]: bottle, ['ml' + t]: lastMl('Feeding', t) };
+  }));
+
   const defaults = (kind, child) => {
     const c = kind === 'Weight' && child === 'both' ? 'A' : child;
     const now = roundHalfHour(Date.now());
     return {
-      Feeding: { child: c, ...lastFeed(c), ml: lastMl('Feeding', c), alsoChange: '', start: local(now), end: local(now + 30 * 60000) },
+      Feeding: { child: c, ...lastFeed(c), ml: lastMl('Feeding', c), ...feedBoth(), alsoChange: '', start: local(now), end: local(now + 30 * 60000) },
       Pumping: { child: c, ml: lastMl('Pumping', c), start: local(now), end: local(now + 30 * 60000) },
       Weight: { child: c, kg: lastKg(c), date: dateOnly(now) },
       Sleep: { child: c, nap: true, start: local(now - 60 * 60000), end: local(now) },
@@ -166,9 +172,9 @@ export default function App() {
     setSaving(true);
     try {
       if (edit) await api.update(kind, edit.id, res.kids[0], res.values);
-      else for (const v of res.list) await api.create(kind, res.kids, v);
+      else for (const v of res.list) await api.create(kind, v.kids || res.kids, v);
       const withChange = !edit && kind === 'Feeding' && form.alsoChange;
-      const mix = !edit && kind === 'Feeding' && res.list.length > 1 ? ' (breast + ' + form.bottle + ')' : '';
+      const mix = !edit && kind === 'Feeding' && form.child !== 'both' && res.list.length > 1 ? ' (breast + ' + form.bottle + ')' : '';
       if (withChange) await api.create('Changes', res.kids, { start: res.values.start, end: null, date: res.values.date, data: { wet: form.alsoChange === 'wet', solid: form.alsoChange === 'solid' } });
       const whoText = res.kids.map((k) => names[k]).join(' & ');
       showToast((edit ? 'Updated · ' : 'Saved · ') + NOUN[kind] + mix + (withChange ? ' + ' + form.alsoChange + ' change' : '') + ' for ' + whoText);
